@@ -1,0 +1,76 @@
+version: '3.7'
+services:
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: reddit_kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - reddit-stream
+
+  zookeeper: # need to include something like allow anonymous login = yes
+    image: bitnami/zookeeper:latest
+    container_name: reddit_zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - reddit-stream
+
+  spark:
+    image: bitnami/spark:latest
+    container_name: reddit_spark
+    depends_on:
+      - kafka
+    environment:
+      SPARK_MODE: master
+    ports:
+      - "8080:8080"
+    networks:
+      - reddit-stream
+
+  cassandra:
+    image: cassandra:latest
+    container_name: reddit_cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_START_RPC: 'true'
+    networks:
+      - reddit-stream
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: reddit_grafana
+    depends_on:
+      - cassandra
+    ports:
+      - "3000:3000"
+    networks:
+      - reddit-stream
+
+  ingestor:
+    build: ./ingestion
+    container_name: reddit_ingestor
+    depends_on:
+      - kafka
+    environment:
+      REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID}
+      REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET}
+      REDDIT_USER_AGENT: ${REDDIT_USER_AGENT}
+      KAFKA_BROKER: ${KAFKA_BROKER}
+    restart: unless-stopped
+    networks:
+        - reddit-stream
+
+networks:
+  reddit-stream:
+    driver: bridge
