@@ -12,7 +12,7 @@ load_dotenv()
 REDDIT_CLIENT_ID = os.getenv('REDDIT_CLIENT_ID')
 REDDIT_CLIENT_SECRET = os.getenv('REDDIT_CLIENT_SECRET')
 REDDIT_USER_AGENT = os.getenv('REDDIT_USER_AGENT')
-KAFKA_BROKER = "kafka:9092"
+KAFKA_BROKER = os.getenv('KAFKA_BROKER')
 TOPIC_NAME = os.getenv('TOPIC_NAME')
 
 def create_reddit_instance():

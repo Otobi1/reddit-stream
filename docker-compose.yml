@@ -72,8 +72,8 @@ services:
       REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID}
       REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET}
       REDDIT_USER_AGENT: ${REDDIT_USER_AGENT}
-      KAFKA_BROKER: kafka:9092
-      TOPIC_NAME: reddit_posts
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      TOPIC_NAME: ${TOPIC_NAME}
     restart: unless-stopped
     networks:
         - reddit-stream
