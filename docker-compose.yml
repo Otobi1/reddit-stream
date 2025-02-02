@@ -2,7 +2,7 @@ version: '3.7'
 services:
   kafka:
     image: 'bitnami/kafka:latest'
-    container_name: reddit_kafka
+    container_name: redditkafka
     ports:
       - "9092:9092"
     environment:
@@ -18,7 +18,7 @@ services:
 
   zookeeper:
     image: 'bitnami/zookeeper:latest'
-    container_name: reddit_zookeeper
+    container_name: redditzookeeper
     platform: linux/arm64/v8
     ports:
       - "2181:2181"
@@ -27,25 +27,40 @@ services:
     networks:
       - reddit-stream
 
-  spark:
-    image: bitnami/spark:latest
-    container_name: reddit_spark
+  spark-master:
+    image: bitnami/spark:3.5
+    container_name: redditsparkmaster
+    hostname: redditsparkmaster
     depends_on:
       - kafka
     environment:
-      - SPARK_MODE=master
-      - SPARK_MASTER_PORT=7077
-    volumes:
-      - ./spark_jobs:/opt/spark/jobs
-      - ./python_app/jars:/opt/spark/jars
+      SPARK_MODE: master
+      SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_WEBUI_PORT: 8080
+      SPARK_MASTER_LOG: /opt/bitnami/spark/logs
     ports:
+      - "7077:7077"
       - "8080:8080"
+    networks:
+      - reddit-stream
+
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: redditsparkworker
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+#      SPARK_MASTER_URL: spark://redditsparkmaster:7077
+      SPARK_WORKER_MEMORY: 3g
+      SPARK_WORKER_CORES: 2
+    depends_on:
+      - spark-master
     networks:
       - reddit-stream
 
   cassandra:
     image: cassandra:latest
-    container_name: reddit_cassandra
+    container_name: redditcassandra
     ports:
       - "9042:9042"
     environment:
@@ -55,7 +70,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: reddit_grafana
+    container_name: redditgrafana
     depends_on:
       - cassandra
     ports:
@@ -65,7 +80,7 @@ services:
 
   ingestor:
     build: ./ingestion
-    container_name: reddit_ingestor
+    container_name: redditingestor
     depends_on:
       - kafka
     environment:
@@ -77,6 +92,21 @@ services:
     restart: unless-stopped
     networks:
         - reddit-stream
+
+  spark-streaming:
+    build: ./streaming
+    container_name: redditsparkstreaming
+    depends_on:
+      - spark-master
+      - kafka
+      - cassandra
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      CASSANDRA_HOST: ${CASSANDRA_HOST}
+      TOPIC_NAME: ${TOPIC_NAME}
+    restart: unless-stopped
+    networks:
+      - reddit-stream
 
 networks:
   reddit-stream:
