@@ -3,18 +3,13 @@ FROM bitnami/spark:latest
 USER root
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && \
     apt-get install -y wget python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Python requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# (Remove manual JAR downloads for Cassandra/Kafka – let Spark do it)
-
-# Copy Spark application
 COPY spark_app.py .
 
 CMD ["/opt/bitnami/spark/bin/spark-submit", \
