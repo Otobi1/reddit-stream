@@ -27,34 +27,14 @@ services:
     networks:
       - reddit-stream
 
-  spark-master:
-    image: bitnami/spark:3.5
-    container_name: redditsparkmaster
-    hostname: redditsparkmaster
+  spark:
+    image: bitnami/spark:latest
     depends_on:
       - kafka
     environment:
       SPARK_MODE: master
-      SPARK_MASTER_PORT: 7077
-      SPARK_MASTER_WEBUI_PORT: 8080
-      SPARK_MASTER_LOG: /opt/bitnami/spark/logs
     ports:
-      - "7077:7077"
       - "8080:8080"
-    networks:
-      - reddit-stream
-
-  spark-worker:
-    image: bitnami/spark:3.5
-    container_name: redditsparkworker
-    environment:
-      SPARK_MODE: worker
-      SPARK_MASTER_URL: spark://spark-master:7077
-#      SPARK_MASTER_URL: spark://redditsparkmaster:7077
-      SPARK_WORKER_MEMORY: 3g
-      SPARK_WORKER_CORES: 2
-    depends_on:
-      - spark-master
     networks:
       - reddit-stream
 
@@ -97,7 +77,7 @@ services:
     build: ./streaming
     container_name: redditsparkstreaming
     depends_on:
-      - spark-master
+      - spark
       - kafka
       - cassandra
     environment:
