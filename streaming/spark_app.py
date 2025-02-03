@@ -19,11 +19,9 @@ def analyze_sentiment(text):
 if __name__ == "__main__":
     spark = (SparkSession.builder
              .appName("RedditTechSentiment")
-             .master("spark://spark-master:7077")
              .config("spark.executor.memory", "512m")
              .config("spark.executor.cores", "1")
              .config("spark.cassandra.connection.host", CASSANDRA_HOST)
-             .config("spark.jars.packages", "com.datastax.spark:spark-cassandra-connector_2.12:3.5.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0")
              .getOrCreate())
 
     sentiment_udf = udf(analyze_sentiment, StringType())
